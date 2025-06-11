@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스마트 근태관리 - AI 통합 시스템</title>
+    <link rel="stylesheet" href="style.css">
+    <meta name="theme-color" content="#4A90E2">
+    <link rel="manifest" href="manifest.json">
+    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=여기에_카카오_API_키_입력"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header" style="background: #fff; width: 100vw; max-width: 100%; border-radius: 0; box-shadow: none;">
+            <div class="header-content" style="display: flex; align-items: center; position: relative; height: 46px; width: 100vw; max-width: 100%;">
+                <button class="icon-btn" title="메뉴" aria-label="메뉴" id="menuButton" style="background:none; border:none; cursor:pointer; padding:0 !important; margin:0; position:absolute; left:4px; top:0; bottom:0; height:100%; z-index:2; display:flex; align-items:center;">
+                  <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><rect y="6" width="28" height="2.5" rx="1.25" fill="#888"/><rect y="13" width="28" height="2.5" rx="1.25" fill="#888"/><rect y="20" width="28" height="2.5" rx="1.25" fill="#888"/></svg>
+                </button>
+                <img src="evertime-logo.svg" alt="Evertime 로고" id="logoBtn" style="height: 32px;" />
+                <button class="icon-btn" title="알림" aria-label="알림" style="background:none; border:none; cursor:pointer; padding:0 !important; margin:0; position:absolute; right:44px; top:0; bottom:0; height:100%; z-index:2; display:flex; align-items:center;">
+                  <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13 23c1.38 0 2.5-1.12 2.5-2.5h-5A2.5 2.5 0 0 0 13 23Zm7-5V11c0-3.07-1.63-5.64-5-6.32V4a2 2 0 1 0-4 0v.68C6.63 5.36 5 7.92 5 11v7l-2 2v1h20v-1l-2-2Zm-2 1H8v-8c0-2.76 1.46-5 5-5s5 2.24 5 5v8Z" fill="#888"/></svg>
+                </button>
+                <a href="login.html" class="icon-btn" title="AI 어시스트 로그인" aria-label="AI 어시스트 로그인" style="background:none; border:none; cursor:pointer; padding:0 !important; margin:0; position:absolute; right:4px; top:0; bottom:0; height:100%; z-index:2; display:flex; align-items:center; font-size:1.5em; color:#4A90E2; text-decoration:none;">
+                  <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="14" cy="14" r="13" stroke="#4A90E2" stroke-width="2" fill="#fff"/><ellipse cx="14" cy="17.5" rx="6" ry="3.5" fill="#4A90E2"/><circle cx="10.5" cy="12" r="1.5" fill="#4A90E2"/><circle cx="17.5" cy="12" r="1.5" fill="#4A90E2"/><rect x="12.5" y="20" width="3" height="2" rx="1" fill="#4A90E2"/></svg>
+                </a>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content" id="mainContent">
+            <!-- Dashboard Tab -->
+            <div class="tab-content active" id="dashboard">
+                <!-- AI 인사이트 카드 -->
+                <div class="ai-insight-card" id="aiInsightCard" style="background:#23272f; color:#fff; border-radius:10px; padding:12px 16px; margin-bottom:14px; cursor:pointer; position:relative;">
+                  <span style="font-weight:bold;">AI 인사이트</span>
+                  <span class="info-icon" title="AI가 분석한 근무 패턴 및 건강 상태를 요약합니다." style="margin-left:6px; color:#4A90E2; cursor:help;">ⓘ</span>
+                  <span class="close" onclick="closeAiInsightCard(event)" style="position:absolute; right:12px; top:10px; font-size:1.3em; color:#b0b8c1; cursor:pointer;">&times;</span>
+                  <p style="margin:6px 0 0 0; color:#b0b8c1;">이번 주 근무 패턴이 평소와 다릅니다. 집중도가 높았던 날이 있어요.</p>
+                </div>
+                <!-- Work Status Card -->
+                <div class="card work-status-card" data-target-tab="analytics">
+                    <div class="status-header" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                        <h3 style="margin:0;">현재 근무 상태</h3>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                          <span class="status-badge working" id="workStatusBadge">근무중</span>
+                          <button class="btn btn-primary" id="checkOutBtn" style="padding:4px 18px; font-size:1em;">퇴근체크</button>
+                        </div>
+                    </div>
+                    <div class="work-time-info">
+                        <div class="time-item">
+                            <span class="label">출근시간</span>
+                            <span class="value" id="checkInTimeValue">09:00</span>
+                            <button class="btn btn-small btn-text hidden" id="checkInButtonInline">출근하기</button>
+                        </div>
+                        <div class="time-item">
+                            <span class="label">현재 근무시간</span>
+                            <span class="value" id="currentWorkTime">05:30</span>
+                        </div>
+                        <div class="time-item">
+                            <span class="label">퇴근시간</span>
+                            <span class="value" id="checkOutTimeValue">--:--</span>
+                            <button class="btn btn-small btn-text hidden" id="checkOutButtonInline">퇴근하기</button>
+                        </div>
+                        <div class="time-item">
+                            <span class="label">휴게시간</span>
+                            <span class="value" id="breakTime">01:00</span>
+                        </div>
+                    </div>
+                    <div class="ai-status-insight">
+                        <span class="ai-status-label">AI 분석 상태:</span>
+                        <span class="ai-status-value tired">😴 약간 피곤함</span>
+                    </div>
+                </div>
+
+                <!-- Weekly Hours Progress -->
+                <div class="card white-heading-card" data-target-tab="analytics">
+                    <h3>주 52시간 근무 현황</h3>
+                    <!-- 카드형 요약 정보 -->
+                    <div class="weekly-summary-cards" style="display: flex; gap: 10px; margin-bottom: 18px; justify-content: space-between;">
+                      <div class="summary-card" id="summaryGoal" style="flex:1; min-width:90px; background:#23272f; border-radius:10px; padding:10px 0; display:flex; flex-direction:column; align-items:center;">
+                        <span style="font-size:1.5em;">🎯</span>
+                        <span class="summary-value" id="summaryGoalValue" style="font-weight:bold; color:#fff; font-size:1.1em;">62%</span>
+                        <span class="summary-label" style="color:#b0b8c1; font-size:0.95em;">근무목표 <span class="info-icon" title="주간 근무 목표 달성률입니다." style="color:#4A90E2; cursor:help;">ⓘ</span></span>
+                      </div>
+                      <div class="summary-card" id="summaryLeave" onclick="openLeaveModal()" style="flex:1; min-width:90px; background:#23272f; border-radius:10px; padding:10px 0; display:flex; flex-direction:column; align-items:center; cursor:pointer;">
+                        <span style="font-size:1.5em;">🌴</span>
+                        <span class="summary-value" id="summaryLeaveValue" style="font-weight:bold; color:#fff; font-size:1.1em;">12/15</span>
+                        <span class="summary-label" style="color:#b0b8c1; font-size:0.95em;">연차잔여 <span class="info-icon" title="남은 연차/총 연차입니다." style="color:#4A90E2; cursor:help;">ⓘ</span></span>
+                      </div>
+                      <div class="summary-card" id="summaryAttendance" style="flex:1; min-width:90px; background:#23272f; border-radius:10px; padding:10px 0; display:flex; flex-direction:column; align-items:center;">
+                        <span style="font-size:1.5em;">🕒</span>
+                        <span class="summary-value" id="summaryAttendanceValue" style="font-weight:bold; color:#fff; font-size:1.1em;">4/5</span>
+                        <span class="summary-label" style="color:#b0b8c1; font-size:0.95em;">출근일수</span>
+                      </div>
+                      <div class="summary-card" id="summaryOvertime" style="flex:1; min-width:90px; background:#23272f; border-radius:10px; padding:10px 0; display:flex; flex-direction:column; align-items:center;">
+                        <span style="font-size:1.5em;">⏰</span>
+                        <span class="summary-value" id="summaryOvertimeValue" style="font-weight:bold; color:#fff; font-size:1.1em;">3h</span>
+                        <span class="summary-label" style="color:#b0b8c1; font-size:0.95em;">초과근무</span>
+                      </div>
+                      <div class="summary-card" id="summaryTotal" style="flex:1; min-width:90px; background:#23272f; border-radius:10px; padding:10px 0; display:flex; flex-direction:column; align-items:center;">
+                        <span style="font-size:1.5em;">📊</span>
+                        <span class="summary-value" id="summaryTotalValue" style="font-weight:bold; color:#fff; font-size:1.1em;">38/52h</span>
+                        <span class="summary-label" style="color:#b0b8c1; font-size:0.95em;">누적근무</span>
+                      </div>
+                    </div>
+                    <div class="progress-info">
+                        <span>32시간 15분 / 52시간</span>
+                        <span class="percentage">62%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 62%"></div>
+                    </div>
+                    <div class="progress-status safe">
+                        <span>✓ 안전한 근무량입니다</span>
+                    </div>
+
+                    <!-- Additional Weekly Hours Analysis (Placeholder) -->
+                    <div class="weekly-analysis-detail-placeholder">
+                        <h4 style="margin-bottom: 12px;">주간 근무 분석</h4>
+                        <div style="height: 40px; background: #23272f; display: flex; align-items: flex-end; gap: 12px; padding: 0 12px; margin-bottom: 18px;">
+                            <div style="height: 32px; width: 12%; background: #4A90E2; border-radius: 6px 6px 0 0; display: flex; align-items: flex-end; justify-content: center;">
+                                <span style="color: #fff; font-size: 0.9em; margin-bottom: 4px;">8h</span>
+                            </div>
+                            <div style="height: 36px; width: 12%; background: #4A90E2; border-radius: 6px 6px 0 0; display: flex; align-items: flex-end; justify-content: center;">
+                                <span style="color: #fff; font-size: 0.9em; margin-bottom: 4px;">8.5h</span>
+                            </div>
+                            <div style="height: 30px; width: 12%; background: #4A90E2; border-radius: 6px 6px 0 0; display: flex; align-items: flex-end; justify-content: center;">
+                                <span style="color: #fff; font-size: 0.9em; margin-bottom: 4px;">7.75h</span>
+                            </div>
+                            <div style="height: 33px; width: 12%; background: #4A90E2; border-radius: 6px 6px 0 0; display: flex; align-items: flex-end; justify-content: center;">
+                                <span style="color: #fff; font-size: 0.9em; margin-bottom: 4px;">8.25h</span>
+                            </div>
+                            <div style="height: 22px; width: 12%; background: #4A90E2; border-radius: 6px 6px 0 0; display: flex; align-items: flex-end; justify-content: center;">
+                                <span style="color: #fff; font-size: 0.9em; margin-bottom: 4px;">5.6h</span>
+                            </div>
+                            <div style="height: 6px; width: 12%; background: #bbb; border-radius: 6px 6px 0 0; display: flex; align-items: flex-end; justify-content: center;">
+                                <span style="color: #fff; font-size: 0.8em; margin-bottom: 0;">0h</span>
+                            </div>
+                            <div style="height: 6px; width: 12%; background: #bbb; border-radius: 6px 6px 0 0; display: flex; align-items: flex-end; justify-content: center;">
+                                <span style="color: #fff; font-size: 0.8em; margin-bottom: 0;">0h</span>
+                            </div>
+                        </div>
+                        <h4>AI 예측 요약</h4>
+                        <p style="color:#b0b8c1;">AI 분석 결과: 이번 주 근무 패턴을 기준으로 금요일 오후에 주 52시간 초과가 예상됩니다.</p>
+                        <p style="color:#b0b8c1;">권장 사항: 금요일 오후 업무량을 조정하거나, 남은 연차 사용을 고려해보세요.</p>
+                    </div>
+                </div>
+
+                <!-- Health Integration -->
+                <div class="quick-action-banners">
+                    <div class="card quick-action-card" id="meetingRoomBanner">
+                        <div class="quick-action-content">
+                            <span class="quick-action-icon">🏢</span>
+                            <div class="quick-action-text">
+                                <h4>회의실 예약</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card quick-action-card" id="mealReservationBanner">
+                        <div class="quick-action-content">
+                            <span class="quick-action-icon">🍽️</span>
+                            <div class="quick-action-text">
+                                <h4>식사 예약</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card quick-action-card" id="leaveRequestBanner">
+                        <div class="quick-action-content">
+                            <span class="quick-action-icon">🌴</span>
+                            <div class="quick-action-text">
+                                <h4>연차신청</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card quick-action-card" id="requestHistoryBanner">
+                        <div class="quick-action-content">
+                            <span class="quick-action-icon">📄</span>
+                            <div class="quick-action-text">
+                                <h4>신청내역조회</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card health-card white-heading-card" data-target-tab="health">
+                    <h3>오늘의 헬스케어</h3>
+                    <div class="health-grid">
+                        <div class="health-item">
+                            <div class="health-icon">👟</div>
+                            <div class="health-data">
+                                <span class="health-value">8,542</span>
+                                <span class="health-label">걸음수</span>
+                            </div>
+                            <!-- Expandable detailed view -->
+                            <div class="health-detail" style="display: none;">
+                                <p>일간 목표: 10,000 걸음</p>
+                                <div class="simple-graph-placeholder">걸음수 추이 그래프 (예정)</div>
+                                <!-- Optional: Add AI insight here -->
+                                <p class="ai-insight">AI 분석: 평균보다 활동량이 20% 적습니다.</p>
+                            </div>
+                        </div>
+                        <div class="health-item">
+                            <div class="health-icon">❤️</div>
+                            <div class="health-data">
+                                <span class="health-value">72</span>
+                                <span class="health-label">심박수</span>
+                            </div>
+                            <!-- Expandable detailed view -->
+                            <div class="health-detail" style="display: none;">
+                                <p>정상 범위: 60-100 bpm</p>
+                                <div class="simple-graph-placeholder">심박수 추이 그래프 (예정)</div>
+                                <!-- Optional: Add AI insight here -->
+                                <p class="ai-insight">AI 분석: 안정적인 심박수 범위입니다.</p>
+                            </div>
+                        </div>
+                        <div class="health-item">
+                            <div class="health-icon">⚡</div>
+                            <div class="health-data">
+                                <span class="health-value">45분</span>
+                                <span class="health-label">활동시간</span>
+                            </div>
+                            <!-- Expandable detailed view -->
+                            <div class="health-detail" style="display: none;">
+                                <p>주간 목표: 150분</p>
+                                <div class="simple-graph-placeholder">활동시간 추이 그래프 (예정)</div>
+                                <!-- Optional: Add AI insight here -->
+                                <p class="ai-insight">AI 분석: 활동 시간이 부족합니다. 휴식 시간에 스트레칭을 권장합니다.</p>
+                            </div>
+                        </div>
+                        <div class="health-item">
+                            <div class="health-icon">🎯</div>
+                            <div class="health-data">
+                                <span class="health-value">85점</span>
+                                <span class="health-label">웰빙점수</span>
+                            </div>
+                            <!-- Expandable detailed view -->
+                            <div class="health-detail" style="display: none;">
+                                <p>점수 상세 분석 (예정)</p>
+                                <!-- Optional: Add AI insight here -->
+                                <p class="ai-insight">AI 분석: 현재 상태 양호. 규칙적인 생활 유지 필요.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Recommendations -->
+                <div class="card ai-recommendations" data-target-tab="recommendations">
+                    <h3>AI 점심 추천</h3>
+                    <div class="ai-lunch-recommendation-card">
+                        <div class="weather-info" style="margin-bottom: 12px;">
+                            <span style="font-size:1.1em; color:#4A90E2;">🌧️ 비오는 날 · 18°C</span>
+                    </div>
+                        <div class="lunch-recommendation-item" style="margin-bottom: 14px;">
+                            <span style="font-size:1.2em;">🍜</span>
+                            <span style="font-weight:bold; margin-left:8px;">띠아냥 등촌본점</span>
+                            <span class="badge" style="margin-left:8px; background:#19c2c2; color:#fff; border-radius:12px; padding:2px 10px; font-size:0.9em;">AI 추천</span>
+                            <div style="color:#b0b8c1; font-size:0.97em; margin-left:32px;">쌀국수 전문 · 백종원 추천 · 50m · ★ 4.5</div>
+                        </div>
+                        <div class="lunch-recommendation-item" style="margin-bottom: 14px;">
+                            <span style="font-size:1.2em;">🥗</span>
+                            <span style="font-weight:bold; margin-left:8px;">샐러드 맛집 (예시)</span>
+                            <span class="badge" style="margin-left:8px; background:#19c2c2; color:#fff; border-radius:12px; padding:2px 10px; font-size:0.9em;">건강식</span>
+                            <div style="color:#b0b8c1; font-size:0.97em; margin-left:32px;">헬시푸드 · 80m · ★ 4.7</div>
+                    </div>
+                        </div>
+                    <!-- Other recommendations -->
+                    <div class="recommendation-item">
+                        <div class="recommendation-icon">💪</div>
+                        <div class="recommendation-content">
+                            <h4>활동 권유</h4>
+                            <p>1시간째 앉아계시네요. 5분 스트레칭은 어떠세요?</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Tab -->
+            <div class="tab-content" id="analytics">
+                <!-- 이달의 급여정보 요약 카드 -->
+                <div class="card salary-summary-card" id="salarySummaryCard" style="margin-bottom: 18px; cursor:pointer; background:#f7fafd; border:1px solid #e0e7ef;">
+                  <div style="display:flex; align-items:center; justify-content:space-between;">
+                    <div>
+                      <h3 style="margin:0 0 6px 0; color:#4A90E2;">이달의 급여 요약</h3>
+                      <div style="font-size:1.1em; color:#232831; font-weight:bold;">3,250,000원 <span style="font-size:0.9em; color:#888; font-weight:normal;">(실수령액)</span></div>
+                      <div style="font-size:0.97em; color:#888; margin-top:2px;">기본급 + 식대 + 교통비 + 기타 수당 포함</div>
+                    </div>
+                    <div style="text-align:right;">
+                      <span style="font-size:2em; color:#4A90E2;">💰</span>
+                    </div>
+                  </div>
+                  <div style="margin-top:8px; color:#888; font-size:0.97em;">상세 내역 보기 &gt;</div>
+                </div>
+                <!-- New Card for Leave Usage Analysis -->
+                <div class="card">
+                    <div class="card-content">
+                        <h3>AI 연차 사용 분석</h3>
+                        <div class="leave-summary-row">
+                            <div class="leave-summary-item">
+                                <div class="leave-label">총 연차</div>
+                                <div class="leave-value">15일</div>
+                            </div>
+                            <div class="leave-summary-item">
+                                <div class="leave-label">사용 연차</div>
+                                <div class="leave-value">7일</div>
+                            </div>
+                            <div class="leave-summary-item">
+                                <div class="leave-label">남은 연차</div>
+                                <div class="leave-value">8일</div>
+                            </div>
+                        </div>
+                        <p class="ai-insight">올해 연차 사용률이 팀 평균보다 10% 낮습니다. 번아웃 방지를 위해 남은 연차 사용을 권장합니다.</p>
+                            <div class="analysis-content-placeholder">
+                                <h4>분석 내용</h4>
+                            <p>최근 3개월간 연차 사용이 감소하는 추세입니다. 팀 평균 연차 사용률은 65%이며, 본인은 47%로 다소 낮은 편입니다. 연차 사용이 특정 월에 집중되어 있어, 분산 사용을 권장합니다.</p>
+                            </div>
+                            <div class="recommendation-content-placeholder">
+                                <h4>추천 내용</h4>
+                            <p>남은 연차 8일 중 2일은 이번 달 내에 사용을 추천합니다. 업무량이 적은 주간에 미리 연차를 계획해 번아웃을 예방하세요. 팀원들과 일정 조율도 함께 고려해보세요.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>주간 근무 분석</h3>
+                    <div style="height: 40px; background: #23272f; display: flex; align-items: flex-end; gap: 12px; padding: 0 12px; margin-bottom: 18px;">
+                      <div style="height: 32px; width: 12%; background: #4A90E2; border-radius: 6px 6px 0 0; display: flex; align-items: flex-end; justify-content: center;">
+                        <span style="color: #fff; font-size: 0.9em; margin-bottom: 4px;">8h</span>
+                                </div>
+                      <div style="height: 36px; width: 12%; background: #4A90E2; border-radius: 6px 6px 0 0; display: flex; align-items: flex-end; justify-content: center;">
+                        <span style="color: #fff; font-size: 0.9em; margin-bottom: 4px;">8.5h</span>
+                            </div>
+                      <div style="height: 30px; width: 12%; background: #4A90E2; border-radius: 6px 6px 0 0; display: flex; align-items: flex-end; justify-content: center;">
+                        <span style="color: #fff; font-size: 0.9em; margin-bottom: 4px;">7.75h</span>
+                                </div>
+                      <div style="height: 33px; width: 12%; background: #4A90E2; border-radius: 6px 6px 0 0; display: flex; align-items: flex-end; justify-content: center;">
+                        <span style="color: #fff; font-size: 0.9em; margin-bottom: 4px;">8.25h</span>
+                            </div>
+                      <div style="height: 22px; width: 12%; background: #4A90E2; border-radius: 6px 6px 0 0; display: flex; align-items: flex-end; justify-content: center;">
+                        <span style="color: #fff; font-size: 0.9em; margin-bottom: 4px;">5.6h</span>
+                                </div>
+                      <div style="height: 6px; width: 12%; background: #bbb; border-radius: 6px 6px 0 0; display: flex; align-items: flex-end; justify-content: center;">
+                        <span style="color: #fff; font-size: 0.8em; margin-bottom: 0;">0h</span>
+                            </div>
+                      <div style="height: 6px; width: 12%; background: #bbb; border-radius: 6px 6px 0 0; display: flex; align-items: flex-end; justify-content: center;">
+                        <span style="color: #fff; font-size: 0.8em; margin-bottom: 0;">0h</span>
+                            </div>
+                        </div>
+                        <!-- Day and Hours Labels below bars -->
+                        <div class="chart-labels-bottom">
+                            <div class="chart-label-item">
+                                <span>월</span>
+                            <span class="hours">8.00</span>
+                            </div>
+                            <div class="chart-label-item">
+                                <span>화</span>
+                            <span class="hours">8.50</span>
+                            </div>
+                            <div class="chart-label-item">
+                                <span>수</span>
+                            <span class="hours">7.75</span>
+                            </div>
+                            <div class="chart-label-item">
+                                <span>목</span>
+                            <span class="hours">8.25</span>
+                            </div>
+                            <div class="chart-label-item">
+                                <span>금</span>
+                            <span class="hours">5.60</span>
+                            </div>
+                            <div class="chart-label-item">
+                                <span>토</span>
+                            <span class="hours">0.00</span>
+                            </div>
+                            <div class="chart-label-item">
+                                <span>일</span>
+                            <span class="hours">0.00</span>
+                            </div>
+                        </div>
+                        <!-- Weekly Summary -->
+                        <div class="weekly-summary">
+                            <div class="weekly-summary-item">
+                                <span class="label">주간 총 근무 시간</span>
+                            <span class="value" id="weeklyTotalHours">40.10h</span>
+                            </div>
+                            <div class="weekly-summary-item">
+                                <span class="label">주간 목표</span>
+                                <span class="value" id="weeklyGoalHours">52:00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>컴플라이언스 알림</h3>
+                    <div class="alert-item warning">
+                        <div class="alert-icon">⚠️</div>
+                        <div class="alert-content">
+                            <h4>주의</h4>
+                            <p>이번 주 연장근무 시간이 12시간을 초과했습니다.</p>
+                        </div>
+                    </div>
+                    <div class="alert-item info">
+                        <div class="alert-icon">ℹ️</div>
+                        <div class="alert-content">
+                            <h4>정보</h4>
+                            <p>다음 주 연차 사용을 권장합니다.</p>
+                        </div>
+                    </div>
+                    <!-- Placeholder for Predictive Analysis -->
+                    <div class="predictive-analysis-placeholder">
+                        <h3>AI 예측 분석</h3>
+                        <div class="analysis-item">
+                            <span class="label">주 52시간 초과 예측:</span>
+                            <span class="value">금요일 오후 예상</span>
+                        </div>
+                        <div class="analysis-item">
+                            <span class="label">번아웃 위험도:</span>
+                            <span class="value danger">높음</span>
+                        </div>
+                        <div class="analysis-item analysis-item--recommendation">
+                            <span class="label">권장 사항:</span>
+                            <span class="value">금요일 오후 업무량 조정 고려</span>
+                        </div>
+                        <!-- Add more predictive analysis insights here -->
+                         <div class="analysis-item">
+                            <span class="label">다음 주 집중 시간 예측:</span>
+                            <span class="value">월요일 오전 (9-11시)</span>
+                        </div>
+                         <div class="analysis-item analysis-item--recommendation">
+                            <span class="label">권장 사항:</span>
+                            <span class="value">중요 업무를 월요일 오전에 배치</span>
+                        </div>
+                    </div>
+                    <!-- Compliance Alert Details (Conceptual) -->
+                    <div class="compliance-detail-placeholder" style="display: none;">
+                        <h4>일별 분석 상세</h4>
+                        <p>해당 날짜의 상세 근무 및 AI 분석 정보를 여기에 표시합니다.</p>
+                         <div class="analysis-item">
+                            <span class="label">근무 시간:</span>
+                            <span class="value">8시간 30분</span>
+                        </div>
+                         <div class="analysis-item">
+                            <span class="label">집중 시간:</span>
+                            <span class="value">5시간 15분</span>
+                        </div>
+                         <div class="analysis-item">
+                            <span class="label">비효율 시간:</span>
+                            <span class="value warning">1시간 45분</span>
+                        </div>
+                         <div class="analysis-item">
+                            <span class="label">미팅 시간:</span>
+                            <span class="value">1시간 30분</span>
+                        </div>
+                        <div class="analysis-item analysis-item--recommendation">
+                            <span class="label">AI 인사이트:</span>
+                            <span class="value">오전 중 집중도가 높았으나, 오후 비효율 시간 증가 추세. 짧은 휴식 권장.</span>
+                        </div>
+                        <!-- More details can be added here -->
+                    </div>
+                </div>
+                
+                <!-- 급여 상세 모달 -->
+                <div id="salaryDetailModal" class="modal" style="display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.35); z-index:2000; justify-content:center; align-items:center;">
+                  <div class="modal-content" style="background:#fff; border-radius:12px; padding:24px 20px; max-width:380px; margin:60px auto; position:relative; min-width:320px;">
+                    <button class="close" id="closeSalaryModal" aria-label="닫기" style="position:absolute; right:16px; top:12px; font-size:2em; cursor:pointer; background:none; border:none; color:#888; transition:color 0.2s; z-index:10; width:40px; height:40px; line-height:1; display:flex; align-items:center; justify-content:center;">
+                      &times;
+                    </button>
+                    <h3 style="margin-top:0; color:#4A90E2;">이달의 급여 상세</h3>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                      <button id="prevSalaryMonth" style="background:none; border:none; color:#4A90E2; font-size:1.2em; cursor:pointer;">&lt; 이전달</button>
+                      <span id="salaryMonthLabel" style="font-weight:bold; color:#232831;">2024년 6월</span>
+                      <button id="nextSalaryMonth" style="background:none; border:none; color:#4A90E2; font-size:1.2em; cursor:pointer;">다음달 &gt;</button>
+                    </div>
+                    <div style="margin-bottom:12px;">
+                      <div style="font-size:1.1em; font-weight:bold; color:#232831;">실수령액: <span id="salaryDetailAmount">3,250,000원</span></div>
+                      <ul style="margin:8px 0 0 0; padding-left:18px; color:#232831; font-size:0.98em;">
+                        <li>기본급: 2,500,000원</li>
+                        <li>식대: 200,000원</li>
+                        <li>교통비: 150,000원</li>
+                        <li>성과수당: 200,000원</li>
+                        <li>기타: 200,000원</li>
+                        <li style="color:#e74c3c;">공제: -150,000원 (4대보험 등)</li>
+                      </ul>
+                    </div>
+                    <!-- AI 급여 추세 그래프(개선) -->
+                    <div style="margin:18px 0 10px 0;">
+                      <h4 style="margin:0 0 8px 0; color:#4A90E2;">AI 급여 추세 분석</h4>
+                      <div id="salaryTrendChart" style="height: 55px; background: linear-gradient(90deg, #e0e7ef 0%, #f7fafd 100%); border-radius:8px; display:flex; align-items:flex-end; gap:16px; padding:10px 16px 0 16px; position:relative; overflow-x:auto;">
+                        <!-- JS로 월별 급여 그래프 바/숫자/라벨 생성 -->
+                      </div>
+                      <div id="salaryTrendSummary" style="font-size:0.97em; color:#888; margin-top:10px;">최근 6개월간 급여는 안정적으로 유지되고 있습니다. 5월 대비 6월 실수령액이 2% 증가했습니다.</div>
+                    </div>
+                  </div>
+                </div>
+            </div>
+
+            <!-- Health Tab -->
+            <div class="tab-content" id="health">
+                <div class="card">
+                    <h3>헬스케어 연동</h3>
+                    <div class="health-source">
+                        <span>🍎 Apple Health 연동됨</span>
+                    </div>
+                    <div class="detailed-health">
+                        <div class="health-metric">
+                            <h4>오늘의 활동량</h4>
+                            <div class="metric-value">8,542 걸음</div>
+                            <div class="metric-progress">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 85%"></div>
+                                </div>
+                                <span>목표: 10,000 걸음</span>
+                            </div>
+                        </div>
+                        <div class="health-metric">
+                            <h4>심박수</h4>
+                            <div class="metric-value">72 BPM</div>
+                            <span class="metric-status normal">정상 범위</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>AI 기반 건강-근무 연관 분석</h3>
+                    <div class="work-health-analysis-placeholder">
+                        <p>근무 시간과 건강 지표(심박수, 피로도 등) 간의 연관성을 보여주는 그래프 또는 요약 (예정)</p>
+                        <div style="height: 60px; background: #23272f; display: flex; align-items: flex-end; gap: 10px; padding: 0 10px; margin-bottom: 10px;">
+                          <div style="width: 20%; display: flex; flex-direction: column; align-items: center;">
+                            <div style="height: 40px; width: 100%; background: #4A90E2; border-radius: 6px 6px 0 0; display: flex; align-items: flex-end; justify-content: center;">
+                              <span style="color: #fff; font-size: 0.9em; margin-bottom: 4px;">8h<br>72bpm</span>
+                            </div>
+                            <span style="margin-top: 2px; color: #888; font-size: 0.85em;">월</span>
+                          </div>
+                          <div style="width: 20%; display: flex; flex-direction: column; align-items: center;">
+                            <div style="height: 48px; width: 100%; background: #4A90E2; border-radius: 6px 6px 0 0; display: flex; align-items: flex-end; justify-content: center;">
+                              <span style="color: #fff; font-size: 0.9em; margin-bottom: 4px;">8.5h<br>74bpm</span>
+                            </div>
+                            <span style="margin-top: 2px; color: #888; font-size: 0.85em;">화</span>
+                          </div>
+                          <div style="width: 20%; display: flex; flex-direction: column; align-items: center;">
+                            <div style="height: 36px; width: 100%; background: #4A90E2; border-radius: 6px 6px 0 0; display: flex; align-items: flex-end; justify-content: center;">
+                              <span style="color: #fff; font-size: 0.9em; margin-bottom: 4px;">7.75h<br>70bpm</span>
+                            </div>
+                            <span style="margin-top: 2px; color: #888; font-size: 0.85em;">수</span>
+                          </div>
+                          <div style="width: 20%; display: flex; flex-direction: column; align-items: center;">
+                            <div style="height: 42px; width: 100%; background: #4A90E2; border-radius: 6px 6px 0 0; display: flex; align-items: flex-end; justify-content: center;">
+                              <span style="color: #fff; font-size: 0.9em; margin-bottom: 4px;">8.25h<br>73bpm</span>
+                            </div>
+                            <span style="margin-top: 2px; color: #888; font-size: 0.85em;">목</span>
+                          </div>
+                          <div style="width: 20%; display: flex; flex-direction: column; align-items: center;">
+                            <div style="height: 28px; width: 100%; background: #4A90E2; border-radius: 6px 6px 0 0; display: flex; align-items: flex-end; justify-content: center;">
+                              <span style="color: #fff; font-size: 0.9em; margin-bottom: 4px;">5.6h<br>68bpm</span>
+                            </div>
+                            <span style="margin-top: 2px; color: #888; font-size: 0.85em;">금</span>
+                          </div>
+                        </div>
+                        <p class="ai-insight">AI 분석: 장시간 앉아있는 근무가 심박수에 영향을 미치는 경향이 있습니다.</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>AI 건강 조언</h3>
+                    <div class="health-advice">
+                        <div class="advice-item">
+                            <span class="advice-time">1시간 전</span>
+                            <p>💪 스트레칭 시간입니다! 목과 어깨를 풀어주세요.</p>
+                        </div>
+                        <div class="advice-item">
+                            <span class="advice-time">30분 전</span>
+                            <p>💧 수분 섭취를 잊지 마세요. 물 한 잔은 어떠세요?</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="health-graph-placeholder">
+                    <!-- Placeholder for health data graph -->
+                    <p>건강 데이터 그래프 (예정)</p>
+                </div>
+            </div>
+
+            <!-- Recommendations Tab -->
+            <div class="tab-content" id="recommendations">
+                <!-- New Card for AI Productivity Recommendations -->
+                <div class="card">
+                    <h3>AI 생산성 추천</h3>
+                    <div class="recommendation-item">
+                        <div class="recommendation-icon">📈</div>
+                        <div class="recommendation-content">
+                            <h4>집중 시간 활용</h4>
+                            <p>오전 9시부터 11시까지 집중도가 가장 높습니다. 중요한 업무를 이때 배치하세요.</p>
+                        </div>
+                    </div>
+                     <div class="recommendation-item">
+                        <div class="recommendation-icon"> pausa </div>
+                         <div class="recommendation-content">
+                             <h4>짧은 휴식 제안</h4>
+                             <p>2시간 연속 근무 중입니다. 10분간 스트레칭 또는 산책을 권장합니다.</p>
+                         </div>
+                     </div>
+                    <!-- Add more productivity recommendations here -->
+                </div>
+
+                <!-- AI 점심 추천 Card (Existing) -->
+                <div class="card">
+                    <h3>AI 점심 추천</h3>
+                    <div class="ai-lunch-recommendation-card">
+                        <div class="weather-info" style="margin-bottom: 12px;">
+                            <span style="font-size:1.1em; color:#4A90E2;">🌧️ 비오는 날 · 18°C</span>
+                    </div>
+                        <div class="lunch-recommendation-item" style="margin-bottom: 14px;">
+                            <span style="font-size:1.2em;">🍜</span>
+                            <span style="font-weight:bold; margin-left:8px;">띠아냥 등촌본점</span>
+                            <span class="badge" style="margin-left:8px; background:#19c2c2; color:#fff; border-radius:12px; padding:2px 10px; font-size:0.9em;">AI 추천</span>
+                            <div style="color:#b0b8c1; font-size:0.97em; margin-left:32px;">쌀국수 전문 · 백종원 추천 · 50m · ★ 4.5</div>
+                            </div>
+                        <div class="lunch-recommendation-item" style="margin-bottom: 14px;">
+                            <span style="font-size:1.2em;">🥗</span>
+                            <span style="font-weight:bold; margin-left:8px;">샐러드 맛집 (예시)</span>
+                            <span class="badge" style="margin-left:8px; background:#19c2c2; color:#fff; border-radius:12px; padding:2px 10px; font-size:0.9em;">건강식</span>
+                            <div style="color:#b0b8c1; font-size:0.97em; margin-left:32px;">헬시푸드 · 80m · ★ 4.7</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calendar Tab -->
+            <div class="tab-content" id="calendar">
+                <div class="card">
+                    <h3>내 일정</h3>
+                    <div class="calendar-controls">
+                    </div>
+                    <!-- Schedule Tabs -->
+                    <div class="schedule-tabs">
+                        <button class="tab-button" data-schedule-type="company">회사일정</button>
+                        <button class="tab-button active" data-schedule-type="personal">개인일정</button>
+                    </div>
+                    <!-- Personal Schedule Content -->
+                    <div class="schedule-content personal-schedule active">
+                        <!-- Personal events will be listed here -->
+                        <div class="event-item">
+                            <div class="event-time">10:00</div> <!-- Placeholder time -->
+                            <div class="event-content">
+                                <h4>대학동창미팅(대학로)</h4>
+                                <p>개인 일정</p>
+                            </div>
+                        </div>
+                        <div class="event-item">
+                            <div class="event-time">14:30</div> <!-- Placeholder time -->
+                            <div class="event-content">
+                                <h4>피트니스 트레이닝</h4>
+                                <p>개인 일정</p>
+                            </div>
+                        </div>
+                        <div class="event-item">
+                            <div class="event-time">16:00</div> <!-- Placeholder time -->
+                            <div class="event-content">
+                                <h4>수도요금납부</h4>
+                                <p>개인 일정</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Placeholder for Calendar Grid/View -->
+                    <div class="calendar-grid-placeholder" style="display: none;">
+                        <p>월간/주간 캘린더 뷰 (예정)</p>
+                        <!-- Calendar library integration or custom rendering here -->
+                    </div>
+                    <!-- Company Schedule Content (Placeholder) -->
+                    <div class="schedule-content company-schedule active">
+                        <div class="event-item">
+                            <div class="event-time">09:30</div>
+                            <div class="event-content">
+                                <h4>주간 팀 미팅</h4>
+                                <p>회의실 A</p>
+                            </div>
+                        </div>
+                        <div class="event-item">
+                            <div class="event-time">11:00</div>
+                            <div class="event-content">
+                                <h4>프로젝트 워크샵</h4>
+                                <p>온라인</p>
+                            </div>
+                        </div>
+                        <div class="event-item">
+                            <div class="event-time">12:30</div>
+                            <div class="event-content">
+                                <h4>점심 약속</h4>
+                                <p>사내 식당</p>
+                            </div>
+                        </div>
+                        <div class="event-item">
+                            <div class="event-time">15:00</div>
+                            <div class="event-content">
+                                <h4>고객 미팅</h4>
+                                <p>회의실 B</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>업무-생활 균형</h3>
+                    <div class="balance-score">
+                        <div class="score-circle">
+                            <span class="score">82</span>
+                            <span class="score-label">균형점수</span>
+                        </div>
+                        <div class="balance-tips">
+                            <p>✅ 적절한 근무시간 유지</p>
+                            <p>⚠️ 개인시간 확보 필요</p>
+                            <!-- Additional AI-based balance tips -->
+                            <p class="ai-insight">AI 분석: 최근 주말 근무 비중이 높습니다. 휴식 시간을 확보하세요.</p>
+                            <p class="ai-insight">AI 분석: 규칙적인 식사 및 수면 패턴 유지를 권장합니다.</p>
+                        </div>
+                    </div>
+                    <!-- 균형점수 원형 아래에 추가 -->
+                    <div class="balance-trend" style="margin: 18px 0 8px 0; text-align: center;">
+                      <span style="font-size:0.95em; color:#b0b8c1;">최근 4주 추이:</span>
+                      <span style="margin-left:8px; font-weight:bold; color:#4A90E2;">78 → 80 → 81 → 82</span>
+                    </div>
+                    <div class="balance-goals" style="display:flex; justify-content:center; gap:18px; margin-bottom:10px;">
+                      <span style="font-size:0.95em; color:#b0b8c1;">개인 목표: <b style='color:#4A90E2;'>80점↑</b></span>
+                      <span style="font-size:0.95em; color:#b0b8c1;">팀 평균: <b style='color:#b0b8c1;'>78점</b></span>
+                    </div>
+                    <div class="balance-tip" style="text-align:center; margin-bottom:12px;">
+                      <span style="font-size:1em; color:#2ecc71;">💡 오늘의 팁: 점심시간에 10분 산책을 해보세요!</span>
+                    </div>
+                    <div style="text-align:center;">
+                      <button class="btn btn-small" style="margin: 8px 0 0 0; background:#4A90E2; color:#fff; border-radius:6px; border:none; padding:6px 18px; font-size:1em; cursor:pointer;">상세 분석 보기</button>
+                    </div>
+                    <!-- Work-Life Balance Analysis Details (Conceptual) -->
+                    <div class="balance-analysis-detail" style="display: none;">
+                        <h4>상세 분석</h4>
+                        <p><strong>근무 시간 비율:</strong> 70%</p>
+                        <p><strong>개인 시간 비율:</strong> 30%</p>
+                        <p><strong>AI 분석 결과:</strong> 업무 시간 대비 개인 시간 부족으로 번아웃 위험 증가 가능성.</p>
+                        <p><strong>권고 사항:</strong> 주 1회 이상은 업무와 완전히 분리된 개인 활동 시간을 계획하세요.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attendance Tab -->
+            <div class="tab-content" id="attendance">
+                <!-- 1. 상단 실시간 요약/알림 -->
+                <div class="attendance-status-alert">
+                    <span class="status-dot on"></span>
+                    오늘 출근 <b>09:00</b> | 퇴근 예정 <b>18:00</b>
+                    <span class="status-alert">정상 출근</span>
+                </div>
+                <!-- 2. 탭 -->
+                <div class="attendance-tabs">
+                    <button class="attendance-tab active" data-attendance-tab="my">내 근태현황</button>
+                    <button class="attendance-tab" data-attendance-tab="team">팀 근태현황</button>
+                </div>
+                <!-- 3. 내 근태현황 -->
+                <div class="attendance-summary" id="attendanceSummaryMy" style="width:100%; padding-bottom:24px;">
+                    <div class="attendance-summary-header">
+                        <span class="attendance-summary-month">2024.06</span>
+                        <button class="attendance-summary-today">오늘</button>
+                    </div>
+                    <div class="attendance-summary-main">
+                        <div class="attendance-summary-total">
+                            <span class="attendance-summary-total-time">65h 40m</span>
+                            <span class="attendance-summary-total-label">누적 근무시간</span>
+                        </div>
+                        <!-- 4. 그래프/차트 placeholder -->
+                        <div class="attendance-summary-chart-placeholder">
+                            <div class="bar-chart-placeholder">[막대그래프 자리]</div>
+                        </div>
+                        <div class="attendance-summary-bar">
+                            <div class="attendance-summary-bar-bg">
+                                <div class="attendance-summary-bar-fill" style="width: 32%;"></div>
+                            </div>
+                            <div class="attendance-summary-bar-labels">
+                                <span>최소 15h</span>
+                                <span>최대 205h 6m</span>
+                            </div>
+                        </div>
+                        <div class="attendance-summary-info">
+                            <div>남은 근무시간: <b>최소 86h 20m</b> ~ <b>최대 139h 26m</b></div>
+                            <div>남은 연장 근무시간: <b>53h 6m</b></div>
+                            <div>앞으로 매일 평균: <b>8h 38m</b> 필요 (남은 근무일: <b>10일</b>)</div>
+                        </div>
+                        <div class="attendance-summary-legend">
+                            <div><span class="legend-dot" style="background:#4ecb8f;"></span> 선택근무 <span class="legend-value">65h 40m</span></div>
+                            <div><span class="legend-dot" style="background:#ff6b6b;"></span> 초과근무(연장) <span class="legend-value">0h 0m</span></div>
+                            <div><span class="legend-dot" style="background:#ffa502;"></span> 승인근무(연장) <span class="legend-value">0h 0m</span></div>
+                        </div>
+                        <!-- 5. 상세보기 버튼 -->
+                        <div class="attendance-detail-btns">
+                            <button class="btn btn-secondary">상세보기</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- 6. 팀 근태현황 -->
+                <div class="attendance-summary" id="attendanceSummaryTeam" style="display:none; width:100%; min-height:60vh;">
+                    <div class="attendance-summary-header">
+                        <span class="attendance-summary-month">2024.06</span>
+                        <button class="attendance-summary-today">오늘</button>
+                    </div>
+                    <div class="attendance-summary-main">
+                        <div class="attendance-summary-total">
+                            <span class="attendance-summary-total-time">320h 10m</span>
+                            <span class="attendance-summary-total-label">팀 누적 근무시간</span>
+                        </div>
+                        <div class="attendance-summary-chart-placeholder">
+                            <div class="bar-chart-placeholder">[팀별 막대그래프 자리]</div>
+                        </div>
+                        <div class="attendance-summary-bar">
+                            <div class="attendance-summary-bar-bg">
+                                <div class="attendance-summary-bar-fill" style="width: 60%; background:#4ecb8f;"></div>
+                            </div>
+                            <div class="attendance-summary-bar-labels">
+                                <span>최소 120h</span>
+                                <span>최대 820h</span>
+                            </div>
+                        </div>
+                        <div class="attendance-summary-info">
+                            <div>남은 근무시간: <b>최소 400h</b> ~ <b>최대 500h</b></div>
+                            <div>남은 연장 근무시간: <b>210h</b></div>
+                            <div>앞으로 매일 평균: <b>8h 10m</b> 필요 (남은 근무일: <b>12일</b>)</div>
+                        </div>
+                        <div class="attendance-summary-legend">
+                            <div><span class="legend-dot" style="background:#4ecb8f;"></span> 선택근무 <span class="legend-value">320h 10m</span></div>
+                            <div><span class="legend-dot" style="background:#ff6b6b;"></span> 초과근무(연장) <span class="legend-value">10h 0m</span></div>
+                            <div><span class="legend-dot" style="background:#ffa502;"></span> 승인근무(연장) <span class="legend-value">5h 0m</span></div>
+                        </div>
+                        <!-- 팀원별 요약 표 -->
+                        <div class="team-summary-table">
+                            <div class="team-summary-header">
+                                <span>이름</span><span>누적근무</span><span>연장근무</span><span>상태</span>
+                            </div>
+                            <div class="team-summary-row"><span>김직원</span><span>65h 40m</span><span>0h 0m</span><span>정상</span></div>
+                            <div class="team-summary-row"><span>이팀원</span><span>70h 10m</span><span>2h 0m</span><span>지각</span></div>
+                            <div class="team-summary-row"><span>박팀원</span><span>60h 0m</span><span>0h 0m</span><span>정상</span></div>
+                        </div>
+                        <div class="team-average-info">팀 평균: <b>65h 10m</b> | 내 순위: <b>2/5</b></div>
+                    </div>
+                </div>
+                <!-- 7. 근태신청/신청현황 -->
+                <div class="attendance-actions" style="display:flex; justify-content:flex-end; gap:12px; margin-top:18px;">
+                    <button class="btn btn-primary" id="attendanceRequestBtn">신청하기</button>
+                    <button class="btn btn-secondary" id="attendanceStatusBtn">신청현황</button>
+                </div>
+                <div class="attendance-request-list">
+                    <div class="request-list-header">최근 신청내역</div>
+                    <div class="request-list-row"><span>2024-06-10</span><span>연차</span><span class="status approved">승인</span></div>
+                    <div class="request-list-row"><span>2024-06-12</span><span>조퇴</span><span class="status pending">대기</span></div>
+                    <div class="request-list-row"><span>2024-06-15</span><span>연장근무</span><span class="status rejected">반려</span></div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Chatbot Modal (iframe 버전) -->
+        <div class="chatbot-overlay" id="chatbotOverlay">
+          <div class="chatbot-container" style="padding:0; background:none; box-shadow:none;">
+            <button class="close-btn" id="closeChatbot" style="position:absolute; right:18px; top:18px; z-index:2; background:#fff; color:#232831; border-radius:50%; width:36px; height:36px; font-size:1.3em; box-shadow:0 2px 8px rgba(0,0,0,0.08);">✕</button>
+            <iframe
+              src="https://udify.app/chatbot/ohfu6dmlp6c9kM2s"
+              style="width: 100%; height: 100%; min-height: 700px; border:none; border-radius:16px; background:#fff;"
+              frameborder="0"
+              allow="microphone">
+            </iframe>
+          </div>
+        </div>
+
+        <!-- Floating Chatbot Button -->
+        <button class="chatbot-fab" id="chatbotFab">
+            <span class="fab-icon">🤖</span>
+        </button>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" data-tab="dashboard">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label">대시보드</span>
+            </button>
+            <button class="nav-item" data-tab="attendance">
+                <span class="nav-icon">🗓️</span>
+                <span class="nav-label">근태현황</span>
+            </button>
+            <button class="nav-item" data-tab="analytics">
+                <span class="nav-icon">📊</span>
+                <span class="nav-label">AI 리포트</span>
+            </button>
+            <button class="nav-item" data-tab="health">
+                <span class="nav-icon">❤️</span>
+                <span class="nav-label">웰니스</span>
+            </button>
+            <button class="nav-item" data-tab="recommendations">
+                <span class="nav-icon">🤖</span>
+                <span class="nav-label">AI 추천</span>
+            </button>
+            <button class="nav-item" data-tab="calendar">
+                <span class="nav-icon">📅</span>
+                <span class="nav-label">일정</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- 퇴근 인증 모달 -->
+    <div id="checkOutModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="modal-title">퇴근 인증</span>
+          <button class="modal-close" id="closeCheckOutModal" aria-label="닫기">&times;</button>
+        </div>
+        <div class="modal-tabs">
+          <button class="modal-tab active" data-tab="gps" id="tabGps">위치기반</button>
+          <button class="modal-tab" data-tab="nfc" id="tabNfc">NFC</button>
+          <button class="modal-tab" data-tab="face" id="tabFace">얼굴인식</button>
+        </div>
+        <div class="modal-body" id="checkTabContent">
+          <!-- 위치기반(GPS) 탭 -->
+          <div class="check-tab-panel" id="panelGps" style="display:block;">
+            <div id="gpsMap" style="width:100%; height:120px; background:#e0e7ef; border-radius:8px; margin-bottom:12px; display:flex; align-items:center; justify-content:center; color:#4A90E2;">지도 로딩중...</div>
+            <div id="gpsLocation" style="font-size:0.98em; color:#232831; margin-bottom:16px;">위치 확인중...</div>
+            <button class="btn btn-primary" id="gpsCheckOutBtn" style="width:100%;">근무종료</button>
+          </div>
+          <!-- NFC 탭 -->
+          <div class="check-tab-panel" id="panelNfc" style="display:none; text-align:center;">
+            <img src="nfc-tag.png" alt="NFC 태그" style="width:70px; margin:18px 0 12px 0; opacity:0.8;" />
+            <div style="color:#232831; margin-bottom:18px;">NFC 태그에 스마트폰을 접촉하세요.</div>
+            <button class="btn btn-primary" id="nfcCheckOutBtn" style="width:100%;">태깅 완료</button>
+          </div>
+          <!-- 얼굴인식 탭 -->
+          <div class="check-tab-panel" id="panelFace" style="display:none; text-align:center;">
+            <video id="faceVideo" autoplay playsinline style="width:100%; max-width:220px; border-radius:10px; background:#e0e7ef; margin-bottom:10px;"></video>
+            <div style="color:#232831; margin-bottom:18px;">카메라를 응시해 주세요.</div>
+            <button class="btn btn-primary" id="faceCheckOutBtn" style="width:100%;">근무종료(인식완료)</button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <div id="checkOutMsg" style="display:none; color:#2ecc71; text-align:center; font-size:1.08em; width:100%;">근무가 종료되었습니다.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 연차 상세 모달 -->
+    <div id="leaveModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="modal-title">연차 상세 내역</span>
+          <button class="modal-close" onclick="closeLeaveModal()" aria-label="닫기">&times;</button>
+        </div>
+        <div class="modal-body">
+          <ul style="padding-left:18px; color:#222;">
+            <li>2024-06-01: 사용</li>
+            <li>2024-06-10: 예정</li>
+            <li>2024-07-02: 사용</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI 인사이트 상세 모달 -->
+    <div id="insightModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="modal-title">AI 인사이트 상세</span>
+          <button class="modal-close" onclick="closeInsightModal()" aria-label="닫기">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p style="color:#222;">이번 주는 월요일에 집중도가 높았고, 금요일에 피로도가 증가했습니다.<br>연차 사용을 고려해보세요.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 근태 신청 모달 -->
+    <div id="attendanceRequestModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="modal-title">근태 신청</span>
+          <button class="modal-close" id="closeAttendanceRequestModal" aria-label="닫기">&times;</button>
+        </div>
+        <div class="modal-body">
+          <form id="attendanceRequestForm" style="display:flex; flex-direction:column; gap:12px; margin-top:10px;">
+            <label style="font-size:0.98em;">신청구분
+              <select id="requestType" required style="width:100%; padding:6px; border-radius:6px; border:1px solid #ccc; margin-top:4px;">
+                <option value="연차">연차</option>
+                <option value="반차">반차</option>
+                <option value="조퇴">조퇴</option>
+                <option value="외출">외출</option>
+                <option value="기타">기타</option>
+              </select>
+            </label>
+            <label style="font-size:0.98em;">기간
+              <input type="date" id="requestStart" required style="width:48%; padding:6px; border-radius:6px; border:1px solid #ccc; margin-top:4px;"> ~
+              <input type="date" id="requestEnd" required style="width:48%; padding:6px; border-radius:6px; border:1px solid #ccc; margin-top:4px;">
+            </label>
+            <label style="font-size:0.98em;">내용
+              <input type="text" id="requestMemo" maxlength="50" placeholder="사유/메모" style="width:100%; padding:6px; border-radius:6px; border:1px solid #ccc; margin-top:4px;">
+            </label>
+            <label style="font-size:0.98em;">결재선
+              <input type="text" id="requestApprover" maxlength="30" placeholder="결재자 이름" style="width:100%; padding:6px; border-radius:6px; border:1px solid #ccc; margin-top:4px;">
+            </label>
+            <div class="modal-footer" style="padding:0; background:none; border:none; justify-content:flex-end;">
+              <button type="button" id="saveRequestBtn" class="btn btn-secondary" style="min-width:70px;">저장</button>
+              <button type="submit" id="submitRequestBtn" class="btn btn-primary" style="min-width:70px;">상신</button>
+            </div>
+          </form>
+          <div id="attendanceRequestMsg" style="margin-top:10px; color:#2ecc71; font-size:0.98em; display:none;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 근태 신청현황 팝업 -->
+    <div id="attendanceStatusModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="modal-title">신청 현황</span>
+          <button class="modal-close" id="closeAttendanceStatusModal" aria-label="닫기">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div id="attendanceStatusList" style="margin-top:10px; min-height:60px; font-size:0.97em;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="drawerOverlay" class="drawer-overlay" style="display:none;"></div>
+    <div id="sideDrawer" class="drawer drawer--left" style="display:none;">
+      <div class="drawer-header">
+        <span class="drawer-title">메뉴</span>
+        <button class="drawer-close" id="closeSideDrawer" aria-label="닫기">&times;</button>
+      </div>
+      <div class="drawer-body">
+        <ul class="drawer-tab-menu">
+          <li><button class="drawer-tab-item" data-tab="dashboard"><span class="nav-icon">🏠</span> 대시보드</button></li>
+          <li><button class="drawer-tab-item" data-tab="attendance"><span class="nav-icon">🗓️</span> 근태현황</button></li>
+          <li><button class="drawer-tab-item" data-tab="analytics"><span class="nav-icon">📊</span> AI 리포트</button></li>
+          <li><button class="drawer-tab-item" data-tab="health"><span class="nav-icon">❤️</span> 웰니스</button></li>
+          <li><button class="drawer-tab-item" data-tab="recommendations"><span class="nav-icon">🤖</span> AI 추천</button></li>
+          <li><button class="drawer-tab-item" data-tab="calendar"><span class="nav-icon">📅</span> 일정</button></li>
+        </ul>
+        <hr style="margin:18px 0; border:none; border-top:1px solid #e0e7ef;">
+        <ul class="drawer-menu">
+          <li><a href="#" id="myInfoMenu">내 정보</a></li>
+          <li><a href="#" id="settingsMenu">설정</a></li>
+          <li><a href="#" id="logoutMenu">로그아웃</a></li>
+        </ul>
+      </div>
+    </div>
+    <div id="notificationDrawer" class="drawer drawer--right" style="display:none;">
+      <div class="drawer-header">
+        <span class="drawer-title">알림</span>
+        <button class="drawer-close" id="closeNotificationDrawer" aria-label="닫기">&times;</button>
+      </div>
+      <div class="drawer-body" id="notificationList">
+        <!-- JS로 알림 동적 렌더링 -->
+      </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
